@@ -1,5 +1,5 @@
 # .github/workflows/ci.yml
-# CI for your repo — frontend (QZ_!) and backend (quiz-backend-simple-auth)
+# Simple CI for this repo: frontend (QZ_!) and backend (quiz-backend-simple-auth)
 
 name: "CI - Frontend & Backend"
 
@@ -13,11 +13,12 @@ on:
       - main
 
 jobs:
-    frontend:
+  frontend:
     name: "Frontend (Node.js)"
     runs-on: ubuntu-latest
     defaults:
       run:
+        # QZ_! includes a '!' so use quotes
         working-directory: "./QZ_!"
     steps:
       - name: Checkout repo
@@ -27,23 +28,37 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          # removed `cache: 'npm'` because a lockfile isn't guaranteed to exist
 
       - name: Install dependencies
         run: |
-          # if a lockfile exists use npm ci (reproducible), otherwise fallback to npm install
+          # prefer npm ci when a lockfile exists, otherwise fall back to npm install
           if [ -f package-lock.json ] || [ -f npm-shrinkwrap.json ] || [ -f yarn.lock ]; then
             npm ci
           else
             npm install
           fi
 
+      - name: Run lint (if present)
+        run: |
+          if [ -f package.json ] && jq -r '.scripts.lint // empty' package.json | grep -q .; then
+            npm run lint; else echo "no lint script"; fi
+
+      - name: Run tests (if present)
+        run: |
+          if [ -f package.json ] && jq -r '.scripts.test // empty' package.json | grep -q .; then
+            npm test --silent; else echo "no test script"; fi
+
+      - name: Build frontend (if build script exists)
+        run: |
+          if [ -f package.json ] && jq -r '.scripts.build // empty' package.json | grep -q .; then
+            npm run build; else echo "no build script"; fi
+
   backend:
     name: "Backend (Maven)"
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: "./quiz-backend-simple-auth"   # repo folder for backend
+        working-directory: "./quiz-backend-simple-auth"
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
