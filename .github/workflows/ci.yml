@@ -1,5 +1,5 @@
-# File: .github/workflows/ci.yml
-# Purpose: run frontend (Node) and backend (Maven) builds & tests on push and pull_request
+# .github/workflows/ci.yml
+# CI for your repo — frontend (QZ_!) and backend (quiz-backend-simple-auth)
 
 name: "CI - Frontend & Backend"
 
@@ -14,11 +14,11 @@ on:
 
 jobs:
   frontend:
-    name: Frontend (Node.js)
+    name: "Frontend (Node.js)"
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./
+        working-directory: "./QZ_!"   # quoted because of the '!' character
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -48,11 +48,11 @@ jobs:
             npm run build; else echo "no build script"; fi
 
   backend:
-    name: Backend (Maven)
+    name: "Backend (Maven)"
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./quiz-backend-simple-auth
+        working-directory: "./quiz-backend-simple-auth"   # repo folder for backend
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
