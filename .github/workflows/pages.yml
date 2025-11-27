@@ -1,0 +1,40 @@
+# .github/workflows/pages.yml
+name: Deploy Frontend to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        working-directory: ./QZ_!
+        run: |
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+
+      - name: Build frontend
+        working-directory: ./QZ_!
+        run: npm run build
+
+      - name: Prepare SPA fallback (copy index.html -> 404.html)
+        run: |
+          cp ./QZ_!/dist/index.html ./QZ_!/dist/404.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./QZ_!/dist
+          publish_branch: gh-pages
