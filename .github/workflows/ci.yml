@@ -1,77 +1,70 @@
 # File: .github/workflows/ci.yml
 # Purpose: run frontend (Node) and backend (Maven) builds & tests on push and pull_request
-name: CI - Frontend & Backend
-on:
-push:
-branches:
-- main
-- 'feature/**'
-pull_request:
-branches:
-- main
 
+name: "CI - Frontend & Backend"
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
 
 jobs:
-frontend:
-name: Frontend (Node.js)
-runs-on: ubuntu-latest
-defaults:
-run:
-working-directory: ./frontend
-steps:
-- name: Checkout repo
-uses: actions/checkout@v4
+  frontend:
+    name: Frontend (Node.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
 
-- name: Use Node.js 18
-uses: actions/setup-node@v4
-with:
-node-version: '18'
-cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
 
+      - name: Run lint (if present)
+        run: |
+          if [ -f package.json ] && jq -r '.scripts.lint // empty' package.json | grep -q .; then
+            npm run lint; else echo "no lint script"; fi
 
-- name: Install dependencies
-run: npm ci
+      - name: Run tests (if present)
+        run: |
+          if [ -f package.json ] && jq -r '.scripts.test // empty' package.json | grep -q .; then
+            npm test --silent; else echo "no test script"; fi
 
+      - name: Build frontend (if build script exists)
+        run: |
+          if [ -f package.json ] && jq -r '.scripts.build // empty' package.json | grep -q .; then
+            npm run build; else echo "no build script"; fi
 
-- name: Run lint (if present)
-run: |
-if [ -f package.json ] && jq -r '.scripts.lint // empty' package.json | grep -q .; then
-npm run lint; else echo "no lint script"; fi
+  backend:
+    name: Backend (Maven)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./quiz-backend-simple-auth
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
 
-- name: Run tests (if present)
-run: |
-if [ -f package.json ] && jq -r '.scripts.test // empty' package.json | grep -q .; then
-npm test --silent; else echo "no test script"; fi
-
-
-- name: Build frontend (if build script exists)
-run: |
-if [ -f package.json ] && jq -r '.scripts.build // empty' package.json | grep -q .; then
-npm run build; else echo "no build script"; fi
-
-
-backend:
-name: Backend (Maven)
-runs-on: ubuntu-latest
-defaults:
-run:
-working-directory: ./backend
-steps:
-- name: Checkout repo
-uses: actions/checkout@v4
-
-
-- name: Set up Java 17
-uses: actions/setup-java@v4
-with:
-distribution: 'temurin'
-java-version: '17'
-cache: 'maven'
-
-
-- name: Build and run tests with Maven
-run: |
-if [ -f pom.xml ]; then
-mvn -B clean verify; else echo "no pom.xml found, skipping maven build"; fi
+      - name: Build and run tests with Maven
+        run: |
+          if [ -f pom.xml ]; then
+            mvn -B clean verify; else echo "no pom.xml found, skipping maven build"; fi
